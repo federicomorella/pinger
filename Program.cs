@@ -1,5 +1,7 @@
 ﻿
 using pingTest;
+using System.Runtime.InteropServices;
+
 
 class PingResultDetail : PingerResult
 {
@@ -8,9 +10,42 @@ class PingResultDetail : PingerResult
 
 class PingTest
 {
+    [DllImport("kernel32.dll", SetLastError = true)]
+    public static extern IntPtr GetConsoleWindow();
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    public static extern bool GetConsoleMode(
+        IntPtr hConsoleHandle,
+        out int lpMode);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    public static extern bool SetConsoleMode(
+    IntPtr hConsoleHandle,
+    int ioMode);
+
+    public static void DisableQuickEdit()
+    {
+        IntPtr conHandle = GetConsoleWindow();
+        int mode;
+
+        if (!GetConsoleMode(conHandle, out mode))
+        {
+            // error getting the console mode. Exit.
+            return;
+        }
+
+        mode = mode & ~(64 |128);
+
+        if (!SetConsoleMode(conHandle, mode))
+        {
+            // error setting console mode.
+        }
+    }
+
     static void Main(string[] args)
     {
-        
+
+        DisableQuickEdit();
 
         int MAX_TASKS = 100;
 
@@ -62,8 +97,16 @@ class PingTest
             }
 
             Console.CursorTop =  pingList.FindIndex(ip => ip == finishedTask.Result.ip);
-            Console.WriteLine($"{finishedTask.Result.ip,-25} ping:{finishedTask.Result.time + "ms",-15} promedio:{Math.Round(tiempos[finishedTask.Result.ip].mean)+"ms",-15}  hora:{finishedTask.Result.timestamp.ToString("T")}".PadRight(Console.BufferWidth));
+            Console.WriteLine($"{finishedTask.Result.ip,-25} ping:{finishedTask.Result.time + "ms",-8} promedio:{Math.Round(tiempos[finishedTask.Result.ip].mean)+"ms",-8}  hora:{finishedTask.Result.timestamp.ToString("T")}".PadRight(Console.BufferWidth));
             Console.CursorVisible = false;
+            Console.CursorTop = pingList.Count;
+
+            Console.ForegroundColor= ConsoleColor.White;
+            Console.BackgroundColor = ConsoleColor.Black;
+            int caidos = tiempos.Values.Where(s => s.time == -1).ToArray().Length;
+            Console.WriteLine("".PadRight(Console.BufferWidth));
+            Console.WriteLine($"Servidores caidos:  {caidos}/{pingList.Count,-36} hora:{DateTime.Now.ToString("T")}");
+            Console.WriteLine("\nHaga click sobre la pantalla para pausar la ejecución. Para reanudar presione 'esc'");
             
             pings.Remove(finishedTask);
 
