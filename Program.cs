@@ -55,7 +55,7 @@ class PingTest
             tiempos[finishedTask.Result.ip].ip = finishedTask.Result.ip;
             tiempos[finishedTask.Result.ip].time = finishedTask.Result.time;
             tiempos[finishedTask.Result.ip].timestamp = finishedTask.Result.timestamp;
-            float desvio = Math.Abs(finishedTask.Result.time - tiempos[finishedTask.Result.ip].mean) / tiempos[finishedTask.Result.ip].mean;
+            float desvio = Math.Abs(finishedTask.Result.time - tiempos[finishedTask.Result.ip].mean);
                 if (finishedTask.Result.time > 0)
                 {//calcula media y desvío
                     tiempos[finishedTask.Result.ip].mean += (finishedTask.Result.time - tiempos[finishedTask.Result.ip].mean) * .05f;
@@ -71,8 +71,9 @@ class PingTest
             {
                 Console.BackgroundColor = ConsoleColor.Red;
             }
-            
-            if (tiempos[finishedTask.Result.ip].mean > 5 && tiempos[finishedTask.Result.ip].varianza / tiempos[finishedTask.Result.ip].mean > 0.5)
+
+            //if (tiempos[finishedTask.Result.ip].mean > 5 && tiempos[finishedTask.Result.ip].varianza / tiempos[finishedTask.Result.ip].mean > 0.5)
+            if (tiempos[finishedTask.Result.ip].mean > 5 && desvio / tiempos[finishedTask.Result.ip].mean > 0.5)
             {
                 Console.BackgroundColor = ConsoleColor.Yellow;
             }
