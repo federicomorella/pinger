@@ -6,47 +6,14 @@ using System.Runtime.InteropServices;
 class PingResultDetail : PingerResult
 {
     public float mean = 0;
+    public float varianza = 0;
 }
 
 class PingTest
 {
-    [DllImport("kernel32.dll", SetLastError = true)]
-    public static extern IntPtr GetConsoleWindow();
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    public static extern bool GetConsoleMode(
-        IntPtr hConsoleHandle,
-        out int lpMode);
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    public static extern bool SetConsoleMode(
-    IntPtr hConsoleHandle,
-    int ioMode);
-
-    public static void DisableQuickEdit()
-    {
-        IntPtr conHandle = GetConsoleWindow();
-        int mode;
-
-        if (!GetConsoleMode(conHandle, out mode))
-        {
-            // error getting the console mode. Exit.
-            return;
-        }
-
-        mode = mode & ~(64 |128);
-
-        if (!SetConsoleMode(conHandle, mode))
-        {
-            // error setting console mode.
-        }
-    }
 
     static void Main(string[] args)
-    {
-
-        DisableQuickEdit();
-
+    {  
         int MAX_TASKS = 100;
 
         List<string> pingList = File.ReadLines("iplist.txt").ToList();
@@ -71,17 +38,23 @@ class PingTest
             {
                 ip = pingList[i];
                 i = i >= pingList.Count-1 ? 0 : i+1;
-                pings.Add(Task.Run(()=>Pinger.PingHost(ip, 1,3000)));                
+                pings.Add(Task.Run(()=>Pinger.PingHost(ip,1500)));                
             }
 
             int finishedTaskID=Task.WaitAny(pings.ToArray());
             var finishedTask = pings[finishedTaskID];
-            if (tiempos[finishedTask.Result.ip].ip == null)//en la primera pasada establece la media en el valor obtenido del ping
+            if (tiempos[finishedTask.Result.ip].ip == null) //en la primera pasada establece la media en el valor obtenido del ping
                 tiempos[finishedTask.Result.ip].mean=finishedTask.Result.time>0? finishedTask.Result.time:0;
             tiempos[finishedTask.Result.ip].ip = finishedTask.Result.ip;
             tiempos[finishedTask.Result.ip].time = finishedTask.Result.time;
-            tiempos[finishedTask.Result.ip].timestamp = finishedTask.Result.timestamp;            
-            tiempos[finishedTask.Result.ip].mean += (finishedTask.Result.time - tiempos[finishedTask.Result.ip].mean) * .1f;
+            tiempos[finishedTask.Result.ip].timestamp = finishedTask.Result.timestamp;
+            float desvio = Math.Abs(finishedTask.Result.time - tiempos[finishedTask.Result.ip].mean) / tiempos[finishedTask.Result.ip].mean;
+                if (finishedTask.Result.time > 0)
+                {//calcula media y desvío
+                    tiempos[finishedTask.Result.ip].mean += (finishedTask.Result.time - tiempos[finishedTask.Result.ip].mean) * .15f;
+                    tiempos[finishedTask.Result.ip].varianza += (desvio * desvio - tiempos[finishedTask.Result.ip].varianza) * .15f;
+                }
+
             Console.ForegroundColor = ConsoleColor.Black;
             if (finishedTask.Result.time >= 0)
             {
@@ -91,7 +64,8 @@ class PingTest
             {
                 Console.BackgroundColor = ConsoleColor.Red;
             }
-            if(finishedTask.Result.time>10 && Math.Abs(finishedTask.Result.time - tiempos[finishedTask.Result.ip].mean ) / tiempos[finishedTask.Result.ip].mean > 0.5)
+            
+            if (tiempos[finishedTask.Result.ip].mean > 5 && tiempos[finishedTask.Result.ip].varianza / tiempos[finishedTask.Result.ip].mean > 0.5)
             {
                 Console.BackgroundColor = ConsoleColor.Yellow;
             }

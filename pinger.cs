@@ -19,7 +19,7 @@ namespace pingTest
         /// <summary>
         /// Manda count pings y devuelve el mayor de los tiempos en la propiedad time. En caso de fallar devuelve -1
         /// </summary>
-        public async static Task<PingerResult> PingHost(string ip, int count, int timeout = 1000)
+        public async static Task<PingerResult> PingHost(string ip, int timeout = 1000)
         {
             Ping pinger = new Ping();
             var options = new PingOptions();
@@ -28,18 +28,17 @@ namespace pingTest
             
             try
             {
-                PingReply PR;
+                           
+                var ping =  pinger.SendPingAsync(ip, timeout);
+                Thread.Sleep(1000);
+                PingReply PR = await ping;
 
-                for (int i = 0; i < count; i++)
-                {
-                    PR = await pinger.SendPingAsync(ip, timeout);
-
-                    if (PR.Status != IPStatus.Success)
-                        return new PingerResult { ip = ip, time = -1 , timestamp=DateTime.Now};
-                    else
-                        maxPing = PR.RoundtripTime > maxPing ? PR.RoundtripTime : maxPing;
-                    Thread.Sleep(500);
-                }
+                if (PR.Status != IPStatus.Success)
+                    return new PingerResult { ip = ip, time = -1 , timestamp=DateTime.Now};
+                else
+                    maxPing = PR.RoundtripTime > maxPing ? PR.RoundtripTime : maxPing;
+                    
+                
             }
             catch (Exception e)
             {
