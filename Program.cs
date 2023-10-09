@@ -14,7 +14,14 @@ class PingTest
 
     static void Main(string[] args)
     {  
-        int MAX_TASKS = 100;
+        int MAX_TASKS = 30;
+        Console.Clear();
+        Console.WriteLine($"{"HOST",-25}" +
+            $"{"ping",-8}" +
+            $"{"Prom.",-8}" +
+            $"{"hora",-8}"
+            .PadRight(Console.BufferWidth));
+
 
         List<string> pingList = File.ReadLines("iplist.txt").ToList();
         MAX_TASKS = MAX_TASKS>pingList.Count?pingList.Count:MAX_TASKS;
@@ -51,8 +58,8 @@ class PingTest
             float desvio = Math.Abs(finishedTask.Result.time - tiempos[finishedTask.Result.ip].mean) / tiempos[finishedTask.Result.ip].mean;
                 if (finishedTask.Result.time > 0)
                 {//calcula media y desvío
-                    tiempos[finishedTask.Result.ip].mean += (finishedTask.Result.time - tiempos[finishedTask.Result.ip].mean) * .15f;
-                    tiempos[finishedTask.Result.ip].varianza += (desvio * desvio - tiempos[finishedTask.Result.ip].varianza) * .15f;
+                    tiempos[finishedTask.Result.ip].mean += (finishedTask.Result.time - tiempos[finishedTask.Result.ip].mean) * .05f;
+                    tiempos[finishedTask.Result.ip].varianza += (desvio * desvio - tiempos[finishedTask.Result.ip].varianza) * .2f;
                 }
 
             Console.ForegroundColor = ConsoleColor.Black;
@@ -70,18 +77,19 @@ class PingTest
                 Console.BackgroundColor = ConsoleColor.Yellow;
             }
 
-            Console.CursorTop =  pingList.FindIndex(ip => ip == finishedTask.Result.ip);
-            Console.WriteLine($"{finishedTask.Result.ip,-25} ping:{finishedTask.Result.time + "ms",-8} promedio:{Math.Round(tiempos[finishedTask.Result.ip].mean)+"ms",-8}  hora:{finishedTask.Result.timestamp.ToString("T")}".PadRight(Console.BufferWidth));
+            Console.CursorTop =  pingList.FindIndex(ip => ip == finishedTask.Result.ip)+1;
+            Console.WriteLine(
+                $"{finishedTask.Result.ip,-25}{finishedTask.Result.time + "ms",-8}{Math.Round(tiempos[finishedTask.Result.ip].mean,1)+"ms",-8}{finishedTask.Result.timestamp.ToString("T"),-10}"
+                .PadRight(Console.BufferWidth));
+
             Console.CursorVisible = false;
-            Console.CursorTop = pingList.Count;
+            Console.CursorTop = pingList.Count+1;
 
             Console.ForegroundColor= ConsoleColor.White;
             Console.BackgroundColor = ConsoleColor.Black;
             int caidos = tiempos.Values.Where(s => s.time == -1).ToArray().Length;
             Console.WriteLine("".PadRight(Console.BufferWidth));
-            Console.WriteLine($"Servidores caidos:  {caidos}/{pingList.Count,-36} hora:{DateTime.Now.ToString("T")}");
-            Console.WriteLine("\nHaga click sobre la pantalla para pausar la ejecución. Para reanudar presione 'esc'");
-            
+            Console.WriteLine($"Sin respuesta: {caidos}/{pingList.Count}");            
             pings.Remove(finishedTask);
 
         }
